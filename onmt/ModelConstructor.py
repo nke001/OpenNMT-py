@@ -9,7 +9,7 @@ import onmt.Models
 import onmt.modules
 from onmt.IO import ONMTDataset
 from onmt.Models import NMTModel, MeanEncoder, RNNEncoder, \
-                        StdRNNDecoder, InputFeedRNNDecoder
+                        StdRNNDecoder, InputFeedRNNDecoder, InputFeedTwinRNNDecoder
 from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          TransformerEncoder, TransformerDecoder, \
                          CNNEncoder, CNNDecoder
@@ -78,6 +78,8 @@ def make_decoder(opt, embeddings):
         opt: the option in current environment.
         embeddings (Embeddings): vocab embeddings for this decoder.
     """
+    import ipdb; ipdb.set_trace()
+
     if opt.decoder_type == "transformer":
         return TransformerDecoder(opt.dec_layers, opt.rnn_size,
                                   opt.global_attention, opt.copy_attn,
@@ -89,6 +91,15 @@ def make_decoder(opt, embeddings):
                           embeddings)
     elif opt.input_feed:
         return InputFeedRNNDecoder(opt.rnn_type, opt.brnn,
+                                   opt.dec_layers, opt.rnn_size,
+                                   opt.global_attention,
+                                   opt.coverage_attn,
+                                   opt.context_gate,
+                                   opt.copy_attn,
+                                   opt.dropout,
+                                   embeddings)
+    elif opt.decoder_type == 'twinnet':
+        return InputFeedTwinRNNDecoder(opt.rnn_type, opt.brnn,
                                    opt.dec_layers, opt.rnn_size,
                                    opt.global_attention,
                                    opt.coverage_attn,
@@ -144,12 +155,13 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     # Share the embedding matrix - preprocess with share_vocab required
     if model_opt.share_embeddings:
         tgt_embeddings.word_lut.weight = src_embeddings.word_lut.weight
-
+    import ipdb; ipdb.set_trace()
     decoder = make_decoder(model_opt, tgt_embeddings)
 
     # Make NMTModel(= encoder + decoder).
     model = NMTModel(encoder, decoder)
-
+    
+    import ipdb; ipdb.set_trace()
     # Make Generator.
     if not model_opt.copy_attn:
         generator = nn.Sequential(
